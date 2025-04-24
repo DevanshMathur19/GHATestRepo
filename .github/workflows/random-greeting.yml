@@ -1,0 +1,37 @@
+name: Random Greeting
+
+on:
+  # Run on push to any branch
+  push:
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  generate-greeting:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Set up greeting variables
+        id: greeting-setup
+        run: |
+          GREETINGS=("Hello" "Hi" "Hey" "Greetings" "Welcome" "Howdy")
+          EMOJIS=("👋" "🎉" "🌟" "✨" "🚀" "🔥" "💯")
+          MESSAGES=("Hope you're having a great day!" "GitHub Actions is cool!" "Let's build something awesome!" "Happy coding!" "Keep up the good work!")
+          
+          RANDOM_GREETING=${GREETINGS[$((RANDOM % ${#GREETINGS[@]}))]}
+          RANDOM_EMOJI=${EMOJIS[$((RANDOM % ${#EMOJIS[@]}))]}
+          RANDOM_MESSAGE=${MESSAGES[$((RANDOM % ${#MESSAGES[@]}))]}
+          
+          echo "greeting=$RANDOM_GREETING" >> $GITHUB_OUTPUT
+          echo "emoji=$RANDOM_EMOJI" >> $GITHUB_OUTPUT
+          echo "message=$RANDOM_MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Generate random greeting
+        run: |
+          echo "${{ steps.greeting-setup.outputs.emoji }} ${{ steps.greeting-setup.outputs.greeting }}, ${{ github.actor }}! ${{ steps.greeting-setup.outputs.message }}"
+          
+      - name: Display workflow metadata
+        run: |
+          echo "Workflow triggered by ${{ github.event_name }} event"
+          echo "Repository: ${{ github.repository }}"
+          echo "Workflow run number: ${{ github.run_number }}"

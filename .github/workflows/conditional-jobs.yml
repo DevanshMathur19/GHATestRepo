@@ -1,0 +1,63 @@
+name: Conditional Jobs
+
+on:
+  # Run on push to any branch
+  push:
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run the workflow in'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - staging
+          - production
+
+jobs:
+  initial-check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_continue: ${{ steps.check.outputs.result }}
+      timestamp: ${{ steps.timestamp.outputs.time }}
+    
+    steps:
+      - name: Random decision
+        id: check
+        run: |
+          # Randomly decide whether to continue (80% chance of yes)
+          if (( RANDOM % 10 < 8 )); then
+            echo "result=true" >> $GITHUB_OUTPUT
+          else
+            echo "result=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Get timestamp
+        id: timestamp
+        run: echo "time=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+      
+      - name: Show decision
+        run: |
+          if [ "${{ steps.check.outputs.result }}" == "true" ]; then
+            echo "✅ Decision: Continue with next job"
+          else
+            echo "⛔ Decision: Skip next job"
+          fi
+
+  conditional-job:
+    needs: initial-check
+    if: ${{ needs.initial-check.outputs.should_continue == 'true' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Display environment info
+        run: |
+          echo "🌎 Running in ${{ github.event.inputs.environment || 'default' }} environment"
+          echo "⏰ Previous job ran at ${{ needs.initial-check.outputs.timestamp }}"
+      
+      - name: Success message
+        run: |
+          echo "🎊 This job only runs when initial-check decides to continue!"
+          echo "🔄 Run ID: ${{ github.run_id }}"

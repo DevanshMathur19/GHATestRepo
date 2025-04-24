@@ -1,0 +1,33 @@
+name: System Info
+
+on:
+  # Run on push to any branch
+  push:
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  system-info:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Display GitHub context
+        run: echo "🔍 Running on branch ${{ github.ref }} by ${{ github.actor }}"
+      
+      - name: Show runner environment
+        run: |
+          echo "🖥️ Runner OS: ${{ runner.os }}"
+          echo "💻 Runner Name: ${{ runner.name }}"
+          echo "🏠 Workspace: ${{ github.workspace }}"
+          
+      - name: Display date and time
+        run: |
+          echo "📅 Current Date: $(date)"
+          echo "⏱️ Workflow Started: ${{ github.event.repository.updated_at }}"
+      
+      - name: Show system resources
+        run: |
+          echo "📊 CPU Info:"
+          lscpu | grep "Model name\|CPU(s)\|Thread(s) per core"
+          echo "💾 Memory Info:"
+          free -h
