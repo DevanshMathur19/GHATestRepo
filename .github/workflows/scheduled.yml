@@ -1,0 +1,36 @@
+name: Scheduled Jobs
+
+on:
+  schedule:
+    # Runs at 00:00 UTC every Monday
+    - cron: '0 0 * * 1'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  scheduled-job:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get current date
+        run: echo "REPORT_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+      
+      - name: Create report file
+        run: |
+          echo "# Weekly Report (${{ env.REPORT_DATE }})" > report.md
+          echo "## Repository Stats" >> report.md
+          echo "Last updated: $(date)" >> report.md
+      
+      - name: List all files in repository
+        run: |
+          echo "## Files in Repository" >> report.md
+          find . -type f -not -path "*/\.*" | sort >> report.md
+          
+      - name: Upload report as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: weekly-report-${{ env.REPORT_DATE }}
+          path: report.md
+          retention-days: 90

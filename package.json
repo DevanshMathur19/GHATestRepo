@@ -1,0 +1,11 @@
+{
+  "name": "gha-test-repo",
+  "version": "1.0.0",
+  "description": "A simple repository to learn GitHub Actions",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": "",
+  "license": "ISC"
+}

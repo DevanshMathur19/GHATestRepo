@@ -1,0 +1,53 @@
+name: Matrix Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.9', '3.11']
+      # Don't cancel all jobs if one fails
+      fail-fast: false
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Display Python version and OS info
+        run: |
+          python -c "import sys; print(f'Python {sys.version} on {sys.platform}')"
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      
+      - name: Run tests
+        run: pytest test_main.py -v
+      
+      - name: Create environment report
+        run: |
+          echo "# Environment Report" > env_report_${{ matrix.os }}_py${{ matrix.python-version }}.md
+          echo "- OS: ${{ matrix.os }}" >> env_report_${{ matrix.os }}_py${{ matrix.python-version }}.md
+          echo "- Python version: ${{ matrix.python-version }}" >> env_report_${{ matrix.os }}_py${{ matrix.python-version }}.md
+          python -c "import platform; print(f'- Platform: {platform.platform()}')" >> env_report_${{ matrix.os }}_py${{ matrix.python-version }}.md
+          
+      - name: Upload environment report
+        uses: actions/upload-artifact@v3
+        with:
+          name: env-report-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: env_report_${{ matrix.os }}_py${{ matrix.python-version }}.md
