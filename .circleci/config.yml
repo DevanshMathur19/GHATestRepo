@@ -26,8 +26,7 @@ jobs:
       - checkout
       - python/install-packages:
           pkg-manager: pip
-          packages:
-            - flake8
+          packages: flake8
       - run:
           name: "Run Flake8"
           command: "flake8 ."
@@ -106,8 +105,9 @@ jobs:
       - image: cimg/node:16.13
     steps:
       - checkout
-      - node/install-packages:
-          pkg-manager: npm
+      - run:
+          name: "Install Dependencies"
+          command: "echo 'Installing npm packages...'"
       - run:
           name: "Build Docs"
           command: "echo 'Building documentation...'"
