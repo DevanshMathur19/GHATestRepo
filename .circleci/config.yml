@@ -18,18 +18,6 @@ jobs:
       - run:
           name: "Say hello"
           command: "echo Hello, World!"
-
-  python-lint:
-    docker:
-      - image: cimg/python:3.10
-    steps:
-      - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          packages: flake8
-      - run:
-          name: "Run Flake8"
-          command: "flake8 ."
   
   system-info:
     docker:
@@ -121,7 +109,6 @@ workflows:
   main-workflow:
     jobs:
       - say-hello
-      - python-lint
       - system-info
       - random-greeting
       - conditional-job:
