@@ -168,10 +168,11 @@ workflows:
                 - circleci-project-setup
                 - main
   
-  scheduled-workflow:
+  # Schedule a frequent workflow (every 3 minutes)
+  frequent-workflow:
     triggers:
       - schedule:
-          cron: "0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48,51,54,57 * * * *"  # Run every 3 minutes
+          cron: "*/3 * * * *"  # Run every 3 minutes
           filters:
             branches:
               only:
@@ -179,4 +180,17 @@ workflows:
                 - circleci-project-setup
     jobs:
       - scheduled-report
+      
+  # Schedule a higher frequency workflow (every 30 minutes)
+  half-hourly-workflow:
+    triggers:
+      - schedule:
+          cron: "*/30 * * * *"  # Run every 30 minutes
+          filters:
+            branches:
+              only:
+                - main
+                - circleci-project-setup
+    jobs:
       - say-hello
+      - system-info
