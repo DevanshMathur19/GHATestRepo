@@ -56,15 +56,16 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Generate Weekly Report"
+          name: "Generate Scheduled Report"
           command: |
-            echo "# Weekly Report"
+            echo "# Scheduled Report"
             echo "Generated on: $(date)"
             echo "## Summary"
-            echo "This is a sample scheduled report that would run on a schedule."
+            echo "This is a sample report that runs every 3 minutes."
             echo "## Statistics"
             echo "- Files in repository: $(find . -type f | wc -l)"
             echo "- Directories in repository: $(find . -type d | wc -l)"
+            echo "- Current time: $(date +%H:%M:%S)"
   
   conditional-job:
     parameters:
@@ -103,14 +104,32 @@ jobs:
           name: "Deploy to GitHub Pages"
           command: "echo 'Simulating deployment to GitHub Pages...'"
 
+# Define pipeline parameters for selective workflow execution
+parameters:
+  run-main-workflow:
+    type: boolean
+    default: true
+  run-deploy-workflow:
+    type: boolean
+    default: false
+  custom-message:
+    type: string
+    default: "Default message"
+
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   main-workflow:
+    when: << pipeline.parameters.run-main-workflow >>
     jobs:
       - say-hello
       - system-info
-      - random-greeting
+      - random-greeting:
+          filters:
+            branches:
+              only:
+                - main
+                - circleci-project-setup
       - conditional-job:
           name: run-with-tests
           run-tests: true
@@ -121,6 +140,7 @@ workflows:
             - run-with-tests
   
   deploy-workflow:
+    when: << pipeline.parameters.run-deploy-workflow >>
     jobs:
       - say-hello
       - deploy-docs:
@@ -130,10 +150,12 @@ workflows:
   scheduled-workflow:
     triggers:
       - schedule:
-          cron: "0 0 * * 0"  # Run at midnight on Sundays
+          cron: "*/3 * * * *"  # Run every 3 minutes
           filters:
             branches:
               only:
                 - main
+                - circleci-project-setup
     jobs:
       - scheduled-report
+      - say-hello
