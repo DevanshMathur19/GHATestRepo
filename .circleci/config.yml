@@ -10,6 +10,24 @@ orbs:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/jobs-steps/#jobs-overview & https://circleci.com/docs/configuration-reference/#jobs
 jobs:
+  check-deploy-condition:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - run:
+          name: "Check if commit message contains deploy"
+          command: |
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            echo "Commit message: $COMMIT_MSG"
+            if echo "$COMMIT_MSG" | grep -i "deploy" > /dev/null; then
+              echo "Commit message contains 'deploy', will trigger deploy steps"
+              exit 0
+            else
+              echo "Commit message does not contain 'deploy', skipping deploy"
+              exit 1
+            fi
+
   say-hello:
     docker:
       - image: cimg/base:current
@@ -109,9 +127,6 @@ parameters:
   run-main-workflow:
     type: boolean
     default: true
-  run-deploy-workflow:
-    type: boolean
-    default: false
   custom-message:
     type: string
     default: "Default message"
@@ -119,6 +134,8 @@ parameters:
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/workflows/ & https://circleci.com/docs/configuration-reference/#workflows
 workflows:
+
+
   main-workflow:
     when: << pipeline.parameters.run-main-workflow >>
     jobs:
@@ -140,12 +157,16 @@ workflows:
             - run-with-tests
   
   deploy-workflow:
-    when: << pipeline.parameters.run-deploy-workflow >>
     jobs:
-      - say-hello
+      - check-deploy-condition
       - deploy-docs:
           requires:
-            - say-hello
+            - check-deploy-condition
+          filters:
+            branches:
+              only:
+                - circleci-project-setup
+                - main
   
   scheduled-workflow:
     triggers:
