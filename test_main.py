@@ -13,6 +13,7 @@ class TestMathFunctions(unittest.TestCase):
         self.assertEqual(multiply(5, 3), 15)
         self.assertEqual(multiply(-1, 1), -1)
         self.assertEqual(multiply(0, 5), 0)
+        self.assertEqual(multiply(5, 3), 15)
 
 
 if __name__ == "__main__":
