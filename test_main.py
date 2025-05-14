@@ -7,7 +7,8 @@ class TestMathFunctions(unittest.TestCase):
         self.assertEqual(add(5, 3), 8)
         self.assertEqual(add(-1, 1), 0)
         self.assertEqual(add(0, 0), 0)
-
+        self.assertEqual(add(5, 3), 8)
+        
     def test_multiply(self):
         self.assertEqual(multiply(5, 3), 15)
         self.assertEqual(multiply(-1, 1), -1)
