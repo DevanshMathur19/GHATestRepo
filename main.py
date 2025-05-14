@@ -21,3 +21,4 @@ if __name__ == "__main__":
     print(f"5 * 3 = {multiply(5, 3)}")
     print(f"5 - 3 = {subtract(5, 3)}")
     print(f"5 / 3 = {divide(5, 3)}")
+    print("Done")
