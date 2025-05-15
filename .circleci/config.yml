@@ -121,6 +121,93 @@ jobs:
       - run:
           name: "Deploy to GitHub Pages"
           command: "echo 'Simulating deployment to GitHub Pages...'"
+          
+  # Long-running jobs that take 5-30 minutes
+  stress-test:
+    docker:
+      - image: cimg/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: "Install stress test dependencies"
+          command: "echo 'Installing dependencies...'"
+      - run:
+          name: "Run CPU Stress Test"
+          command: |
+            echo "Starting CPU stress test..."
+            # Simulate CPU-intensive task with Python
+            python -c "import time; print('Starting stress test...'); [time.sleep(0.01) for _ in range(600*100)]; print('25% complete'); [time.sleep(0.01) for _ in range(600*100)]; print('50% complete'); [time.sleep(0.01) for _ in range(600*100)]; print('75% complete'); [time.sleep(0.01) for _ in range(600*100)]; print('Stress test complete!')"
+
+  data-processing:
+    docker:
+      - image: cimg/python:3.9
+    resource_class: medium+
+    steps:
+      - checkout
+      - run:
+          name: "Install data processing dependencies"
+          command: "echo 'Installing data processing packages...'"
+      - run:
+          name: "Process large dataset"
+          command: |
+            echo "Simulating processing of large dataset..."
+            # Generate a large file with random data
+            python -c "import random; import time; f = open('large_data.txt', 'w'); [f.write(f'{random.random()},{random.random()},{random.random()}\n') for _ in range(10000)]; f.close(); print('Data generated.')"
+            # Process it line by line with occasional sleep to simulate complex processing
+            python -c "import time; count = 0; print('Starting processing...'); f = open('large_data.txt', 'r'); lines = f.readlines(); f.close(); for i, line in enumerate(lines): count += 1; if i % 1000 == 0: print(f'Processed {i} records'); time.sleep(5); print(f'Simulated processing complete. Processed {count} records.'); time.sleep(600);"
+
+  integration-tests:
+    docker:
+      - image: cimg/python:3.9
+      - image: cimg/postgres:14.0
+        environment:
+          POSTGRES_USER: circleci
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: circle_test
+    steps:
+      - checkout
+      - run:
+          name: "Wait for DB"
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+      - run:
+          name: "Setup test database"
+          command: |
+            echo "Setting up test database..."
+            sleep 60  # Give DB time to fully initialize
+      - run:
+          name: "Run integration tests"
+          command: |
+            echo "Running integration test suite..."
+            # Simulate long-running integration tests
+            for i in {1..15}; do
+              echo "Running test group $i of 15..."
+              sleep 60
+              echo "Test group $i completed."
+            done
+            echo "All integration tests complete!"
+            
+  security-scan:
+    docker:
+      - image: cimg/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: "Install security scanning tools"
+          command: "echo 'Installing security scanners...'"
+      - run:
+          name: "Run vulnerability scan"
+          command: |
+            echo "Running comprehensive security scan..."
+            # Simulate security scanning with progress updates
+            total=20
+            for i in $(seq 1 $total); do
+              echo "Scanning component $i of $total..."
+              # Simulate varying scan times
+              sleep_time=$((30 + RANDOM % 60))
+              sleep $sleep_time
+              echo "Component $i scan complete."
+            done
+            echo "Security scan complete! No vulnerabilities found."
 
 # Define pipeline parameters for selective workflow execution
 parameters:
@@ -155,6 +242,18 @@ workflows:
           run-tests: false
           requires:
             - run-with-tests
+            
+  # Long-running workflow
+  intensive-workflow:
+    jobs:
+      - stress-test
+      - data-processing:
+          requires:
+            - stress-test
+      - integration-tests:
+          requires:
+            - stress-test
+      - security-scan
   
   deploy-workflow:
     jobs:
@@ -167,30 +266,3 @@ workflows:
               only:
                 - circleci-project-setup
                 - main
-  
-  # Schedule a frequent workflow (every 5 minutes)
-  frequent-workflow:
-    triggers:
-      - schedule:
-          cron: "0,5,10,15,20,25,30,35,40,45,50,55 * * * *"  # Run every 5 minutes
-          filters:
-            branches:
-              only:
-                - main
-                - circleci-project-setup
-    jobs:
-      - scheduled-report
-      
-  # Schedule a higher frequency workflow (every 30 minutes)
-  half-hourly-workflow:
-    triggers:
-      - schedule:
-          cron: "0,30 * * * *"  # Run every 30 minutes
-          filters:
-            branches:
-              only:
-                - main
-                - circleci-project-setup
-    jobs:
-      - say-hello
-      - system-info
