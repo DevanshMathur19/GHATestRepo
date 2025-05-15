@@ -27,6 +27,24 @@ jobs:
               echo "Commit message does not contain 'deploy', skipping deploy"
               exit 1
             fi
+              
+  check-intense-condition:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - run:
+          name: "Check if commit message contains intense"
+          command: |
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            echo "Commit message: $COMMIT_MSG"
+            if echo "$COMMIT_MSG" | grep -i "intense" > /dev/null; then
+              echo "Commit message contains 'intense', will trigger intensive workflow"
+              exit 0
+            else
+              echo "Commit message does not contain 'intense', skipping intensive workflow"
+              exit 1
+            fi
 
   say-hello:
     docker:
@@ -122,6 +140,69 @@ jobs:
           name: "Deploy to GitHub Pages"
           command: "echo 'Simulating deployment to GitHub Pages...'"
           
+  # Medium-length jobs that take 2-5 minutes
+  code-analysis:
+    docker:
+      - image: cimg/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: "Install analysis tools"
+          command: "echo 'Installing code analysis tools...'"
+      - run:
+          name: "Analyze code quality"
+          command: |
+            echo "Starting code quality analysis..."
+            # Simulate a code quality analysis that takes about 2-3 minutes
+            echo "Analyzing Python modules..."
+            sleep 60
+            echo "Analyzing JavaScript modules..."
+            sleep 45
+            echo "Generating code quality report..."
+            sleep 30
+            echo "Code analysis complete!"
+
+  load-test:
+    docker:
+      - image: cimg/python:3.9
+    steps:
+      - checkout
+      - run:
+          name: "Install load testing tools"
+          command: "echo 'Installing load testing tools...'"
+      - run:
+          name: "Run load tests"
+          command: |
+            echo "Starting load tests..."
+            echo "Simulating 100 virtual users..."
+            for i in {1..3}; do
+              echo "Running load test phase $i/3..."
+              sleep 60
+              echo "Phase $i complete, response time: $((200 + RANDOM % 300))ms"
+            done
+            echo "Load testing complete!"
+            
+  performance-benchmark:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - run:
+          name: "Prepare benchmark environment"
+          command: "echo 'Setting up benchmark environment...'"
+      - run:
+          name: "Run benchmarks"
+          command: |
+            echo "Running performance benchmarks..."
+            for benchmark in "API Response" "Database Query" "File Processing" "Image Rendering"; do
+              echo "Benchmarking: $benchmark"
+              sleep 30
+              echo "$benchmark: $((50 + RANDOM % 200))ms"
+            done
+            echo "Generating benchmark report..."
+            sleep 45
+            echo "Benchmark testing complete!"
+
   # Long-running jobs that take 5-30 minutes
   stress-test:
     docker:
@@ -246,14 +327,26 @@ workflows:
   # Long-running workflow
   intensive-workflow:
     jobs:
-      - stress-test
+      - check-intense-condition
+      - stress-test:
+          requires:
+            - check-intense-condition
       - data-processing:
           requires:
             - stress-test
       - integration-tests:
           requires:
             - stress-test
-      - security-scan
+      - security-scan:
+          requires:
+            - check-intense-condition
+            
+  # Medium-length workflow (2-5 minutes per job)
+  medium-workflow:
+    jobs:
+      - code-analysis
+      - load-test
+      - performance-benchmark
   
   deploy-workflow:
     jobs:
