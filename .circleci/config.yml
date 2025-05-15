@@ -216,8 +216,35 @@ jobs:
           name: "Run CPU Stress Test"
           command: |
             echo "Starting CPU stress test..."
-            # Simulate CPU-intensive task with Python
-            python -c "import time; print('Starting stress test...'); [time.sleep(0.01) for _ in range(600*100)]; print('25% complete'); [time.sleep(0.01) for _ in range(600*100)]; print('50% complete'); [time.sleep(0.01) for _ in range(600*100)]; print('75% complete'); [time.sleep(0.01) for _ in range(600*100)]; print('Stress test complete!')"
+            # Simulate a CPU-intensive job with frequent progress updates
+            total_seconds=600  # 10 minutes total
+            interval=30       # Output every 30 seconds
+            
+            echo "Starting stress test..."
+            start_time=$(date +%s)
+            
+            # Loop until we've spent 10 minutes total
+            elapsed=0
+            while [ $elapsed -lt $total_seconds ]; do
+              # Sleep for the interval (or remaining time if less)
+              remaining=$((total_seconds - elapsed))
+              if [ $remaining -lt $interval ]; then
+                sleep $remaining
+              else
+                sleep $interval
+              fi
+              
+              # Update elapsed time and show progress
+              current_time=$(date +%s)
+              elapsed=$((current_time - start_time))
+              percent=$((elapsed * 100 / total_seconds))
+              
+              echo "Progress: $percent% complete (${elapsed}s / ${total_seconds}s)"
+              echo "Current CPU load: $((50 + RANDOM % 40))%"
+              echo "Current memory usage: $((70 + RANDOM % 20))%"
+            done
+            
+            echo "Stress test complete!"
 
   data-processing:
     docker:
@@ -233,9 +260,44 @@ jobs:
           command: |
             echo "Simulating processing of large dataset..."
             # Generate a large file with random data
-            python -c "import random; import time; f = open('large_data.txt', 'w'); [f.write(f'{random.random()},{random.random()},{random.random()}\n') for _ in range(10000)]; f.close(); print('Data generated.')"
-            # Process it line by line with occasional sleep to simulate complex processing
-            python -c "import time; count = 0; print('Starting processing...'); f = open('large_data.txt', 'r'); lines = f.readlines(); f.close(); for i, line in enumerate(lines): count += 1; if i % 1000 == 0: print(f'Processed {i} records'); time.sleep(5); print(f'Simulated processing complete. Processed {count} records.'); time.sleep(600);"
+            echo "Generating test data file..."
+            python -c "import random; f = open('large_data.txt', 'w'); [f.write(f'{random.random()},{random.random()},{random.random()}\n') for _ in range(10000)]; f.close(); print('Data file generated with 10,000 records.')" 
+            
+            # Process data with frequent updates
+            echo "Starting data processing..."
+            for i in {0..9}; do
+              start=$((i*1000))
+              end=$(((i+1)*1000))
+              echo "Processing records $start to $end..."
+              
+              # Simulate processing 1000 records
+              sleep 30
+              
+              # Print metrics after each batch
+              proc_speed=$((RANDOM % 50 + 100))
+              mem_usage=$((RANDOM % 20 + 70))
+              echo "Batch $((i+1))/10 complete: $proc_speed records/sec, ${mem_usage}% memory utilization"
+            done
+            
+            # Long-running task with frequent updates
+            echo "Running data aggregation phase..."
+            total_time=300  # 5 minutes
+            interval=20     # Report every 20 seconds
+            
+            start_time=$(date +%s)
+            elapsed=0
+            
+            while [ $elapsed -lt $total_time ]; do
+              sleep $interval
+              current_time=$(date +%s)
+              elapsed=$((current_time - start_time))
+              percent=$((elapsed * 100 / total_time))
+              
+              echo "Data aggregation: $percent% complete"
+              echo "Processing speed: $((RANDOM % 50 + 150)) operations/sec"
+            done
+            
+            echo "Data processing complete. All 10,000 records processed successfully."
 
   integration-tests:
     docker:
